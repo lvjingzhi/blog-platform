@@ -1,6 +1,13 @@
 <template>
   <footer class="app-footer">
-    <p>© {{ year }} 我的博客. Powered by Vue + Express.</p>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">✦</span>
+        <span>静志博客</span>
+      </div>
+      <p class="footer-copy">© {{ year }} 静志博客 · 记录思考，分享知识</p>
+      <p class="footer-tech">Powered by Vue 3 + Express + SQLite</p>
+    </div>
   </footer>
 </template>
 
@@ -10,11 +17,50 @@ const year = new Date().getFullYear()
 
 <style scoped>
 .app-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.footer-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
   text-align: center;
-  padding: 1.5rem;
-  color: #999;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.footer-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+
+.footer-copy {
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
-  border-top: 1px solid #eee;
-  margin-top: 3rem;
+  margin: 0;
+}
+
+.footer-tech {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  margin: 0.3rem 0 0;
 }
 </style>

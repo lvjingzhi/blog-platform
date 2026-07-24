@@ -18,14 +18,22 @@ defineProps({ show: { type: Boolean, default: true }, text: { type: String, defa
   padding: 3rem;
   gap: 1rem;
 }
+
 .spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid #e0e0e0;
-  border-top-color: #2563eb;
+  width: 38px;
+  height: 38px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-spinner p { color: #888; font-size: 0.9rem; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
 </style>

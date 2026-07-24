@@ -9,11 +9,13 @@ defineProps({ tag: { type: String, required: true } })
 <style scoped>
 .tag-badge {
   display: inline-block;
-  padding: 0.15rem 0.6rem;
-  font-size: 0.78rem;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.76rem;
   border-radius: 12px;
-  background: #e8f0fe;
-  color: #2563eb;
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
   font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all var(--transition);
 }
 </style>

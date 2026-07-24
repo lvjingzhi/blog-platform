@@ -1,13 +1,16 @@
 <template>
   <div class="library-page">
-    <h1 class="page-title">📚 我的书库</h1>
-    <p class="subtitle">已购买的文章</p>
+    <div class="library-header">
+      <h1 class="page-title">📚 我的书库</h1>
+      <p class="subtitle">已购买的文章</p>
+    </div>
 
     <LoadingSpinner :show="loading" text="加载中..." />
 
     <div v-if="!loading && purchases.length === 0" class="empty-state">
-      <p>📭 还没有购买任何文章</p>
-      <router-link to="/">去逛逛</router-link>
+      <div class="empty-icon">📭</div>
+      <p>还没有购买任何文章</p>
+      <router-link to="/" class="browse-link">去逛逛 →</router-link>
     </div>
 
     <div v-if="!loading && purchases.length > 0" class="purchase-list">
@@ -20,7 +23,8 @@
         <div class="purchase-info">
           <h3>{{ p.post_title }}</h3>
           <div class="purchase-meta">
-            <span>¥{{ (p.amount / 100).toFixed(2) }}</span>
+            <span class="purchase-amount">¥{{ (p.amount / 100).toFixed(2) }}</span>
+            <span class="meta-divider"></span>
             <time>{{ formatDate(p.created_at) }}</time>
           </div>
         </div>
@@ -51,29 +55,120 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.library-page { padding: 1rem 0; }
-.page-title { font-size: 1.8rem; color: #1a1a2e; margin-bottom: 0.3rem; }
-.subtitle { color: #888; margin-bottom: 2rem; }
-.purchase-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.library-page {
+  padding: 1rem 0;
+}
+
+.library-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 0.3rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.purchase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
 .purchase-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1.2rem 1.5rem;
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: all var(--transition);
 }
-.purchase-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.purchase-info h3 { margin: 0 0 0.4rem; font-size: 1.1rem; color: #1a1a2e; }
-.purchase-meta { display: flex; gap: 1rem; color: #999; font-size: 0.85rem; }
-.read-btn { color: #2563eb; font-weight: 500; }
+
+.purchase-item:hover {
+  border-color: var(--color-primary-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.purchase-info h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.purchase-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.purchase-amount {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.meta-divider {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.read-btn {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: all var(--transition);
+}
+
+.purchase-item:hover .read-btn {
+  transform: translateX(4px);
+}
+
 .empty-state {
   text-align: center;
-  padding: 4rem 0;
-  color: #999;
+  padding: 5rem 1rem;
+  color: var(--color-text-muted);
 }
-.empty-state a { color: #2563eb; }
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.browse-link {
+  color: var(--color-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .purchase-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+  .page-title {
+    font-size: 1.5rem;
+  }
+}
 </style>

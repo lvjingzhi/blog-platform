@@ -1,6 +1,12 @@
 <template>
   <div class="reader-auth-page">
     <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-icon">✦</div>
+        <h2>欢迎回来</h2>
+        <p>{{ mode === 'login' ? '登录你的账号继续阅读' : '创建账号以购买付费内容' }}</p>
+      </div>
+
       <div class="auth-tabs">
         <button :class="{ active: mode === 'login' }" @click="switchMode('login')">登录</button>
         <button :class="{ active: mode === 'register' }" @click="switchMode('register')">注册</button>
@@ -9,23 +15,32 @@
       <form @submit.prevent="handleSubmit" class="auth-form">
         <div class="form-group">
           <label>邮箱</label>
-          <input v-model="email" type="email" placeholder="请输入邮箱" required />
+          <div class="input-wrapper">
+            <span class="input-icon">📧</span>
+            <input v-model="email" type="email" placeholder="请输入邮箱" required />
+          </div>
         </div>
 
         <div class="form-group" v-if="mode === 'register'">
           <label>昵称</label>
-          <input v-model="nickname" type="text" placeholder="怎么称呼你？（可选）" />
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input v-model="nickname" type="text" placeholder="怎么称呼你？（可选）" />
+          </div>
         </div>
 
         <div class="form-group">
           <label>密码</label>
-          <input v-model="password" type="password" placeholder="密码（至少6位）" required minlength="6" />
+          <div class="input-wrapper">
+            <span class="input-icon">🔑</span>
+            <input v-model="password" type="password" placeholder="密码（至少6位）" required minlength="6" />
+          </div>
         </div>
 
         <div v-if="error" class="error-msg">{{ error }}</div>
 
         <button type="submit" :disabled="loading" class="submit-btn">
-          {{ loading ? '处理中...' : (mode === 'login' ? '登录' : '注册') }}
+          {{ loading ? '处理中...' : (mode === 'login' ? '登录' : '创建账号') }}
         </button>
       </form>
 
@@ -76,7 +91,6 @@ async function handleSubmit() {
         password: password.value,
       })
     }
-    // Redirect to the page they came from, or home
     const redirect = route.query.redirect || '/'
     router.push(redirect)
   } catch (err) {
@@ -95,86 +109,170 @@ async function handleSubmit() {
   justify-content: center;
   padding: 2rem;
 }
+
 .auth-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-xl);
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  border: 1px solid var(--color-border-light);
 }
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+  color: #fff;
+  border-radius: 14px;
+  font-size: 1.3rem;
+  margin-bottom: 0.8rem;
+}
+
+.auth-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 0.3rem;
+}
+
+.auth-header p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 .auth-tabs {
   display: flex;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #eee;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 3px;
 }
+
 .auth-tabs button {
   flex: 1;
-  padding: 0.6rem;
+  padding: 0.55rem;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 1rem;
+  border-radius: 7px;
+  font-size: 0.92rem;
   cursor: pointer;
-  color: #888;
-  transition: all 0.2s;
+  color: var(--color-text-muted);
+  transition: all var(--transition);
+  font-weight: 500;
 }
+
 .auth-tabs button.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
+  background: var(--color-surface);
+  color: var(--color-primary);
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
+
 .form-group {
   margin-bottom: 1rem;
 }
+
 .form-group label {
   display: block;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.35rem;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
+  font-size: 0.88rem;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.8rem;
   font-size: 0.9rem;
+  pointer-events: none;
 }
-.form-group input {
+
+.input-wrapper input {
   width: 100%;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  box-sizing: border-box;
+  padding: 0.65rem 0.8rem 0.65rem 2.5rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all var(--transition);
+  background: var(--color-bg);
 }
-.form-group input:focus {
+
+.input-wrapper input:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
+
 .error-msg {
-  color: #e53e3e;
+  color: var(--color-error);
   font-size: 0.85rem;
   margin-bottom: 0.8rem;
-  background: #fef2f2;
-  padding: 0.5rem 0.8rem;
-  border-radius: 6px;
+  background: var(--color-error-bg);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.15);
 }
+
 .submit-btn {
   width: 100%;
-  padding: 0.7rem;
-  background: #2563eb;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
   margin-top: 0.5rem;
+  transition: all var(--transition);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
 }
-.submit-btn:hover { background: #1d4ed8; }
-.submit-btn:disabled { opacity: 0.6; cursor: default; }
+
+.submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+
 .auth-hint {
   text-align: center;
-  margin-top: 1rem;
-  color: #888;
-  font-size: 0.9rem;
+  margin-top: 1.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
 }
+
 .auth-hint a {
-  color: #2563eb;
-  text-decoration: none;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
 }
 </style>
