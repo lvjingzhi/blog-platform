@@ -11,9 +11,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   function initFromStorage() {
     const saved = localStorage.getItem('blog_admin_token')
+    const savedUser = localStorage.getItem('blog_admin_user')
+
     if (saved) {
       token.value = saved
-      // Verify token is still valid
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
+    }
+
+    if (savedUser) {
+      username.value = savedUser
+    }
+
+    if (token.value) {
       checkAuth().catch(() => {
         logout()
       })
@@ -25,6 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = data.token
     username.value = data.username
     localStorage.setItem('blog_admin_token', data.token)
+    localStorage.setItem('blog_admin_user', data.username)
     axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
     return data
   }
@@ -33,6 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     username.value = null
     localStorage.removeItem('blog_admin_token')
+    localStorage.removeItem('blog_admin_user')
     delete axios.defaults.headers.common['Authorization']
     router.push('/admin/login')
   }
