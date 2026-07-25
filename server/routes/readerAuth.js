@@ -68,12 +68,17 @@ router.post('/register', async (req, res) => {
 });
 
 /**
- * GET /api/reader/verify-email/:token
+ * POST /api/reader/verify-email
  * 验证邮箱 → 标记已验证 → 自动登录返回 JWT
+ * 使用 POST 而非 GET，防止邮箱服务商的安全扫描器预取链接消耗 token
  */
-router.get('/verify-email/:token', (req, res) => {
+router.post('/verify-email', (req, res) => {
   try {
-    const { token } = req.params;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: '缺少验证令牌' });
+    }
 
     const readers = runQuery(
       'SELECT * FROM readers WHERE verification_token = $token',
@@ -81,7 +86,9 @@ router.get('/verify-email/:token', (req, res) => {
     );
 
     if (readers.length === 0) {
-      return res.status(400).json({ error: '无效的验证链接' });
+      // token 可能已被使用（邮箱扫描器等），检查是否有已通过此 token 验证的用户
+      // 实际上无法反查，给一个友好的提示
+      return res.status(400).json({ error: '无效的验证链接，可能已被使用。如果已成功验证，请直接登录。' });
     }
 
     const reader = readers[0];

@@ -1,26 +1,33 @@
 <template>
   <div class="reader-auth-page">
     <div class="auth-card">
-      <!-- 加载中 -->
-      <div v-if="loading" class="status-state">
-        <div class="spinner"></div>
-        <h2>正在验证邮箱...</h2>
-      </div>
+      <div class="status-state" :class="status">
+        <div class="spinner" v-if="status === 'loading'"></div>
+        <div class="auth-icon" v-else-if="status === 'success'">✅</div>
+        <div class="auth-icon" v-else-if="status === 'error'">❌</div>
+        <div class="auth-icon" v-else>📧</div>
 
-      <!-- 验证成功 -->
-      <div v-else-if="success" class="status-state success">
-        <div class="auth-icon">✅</div>
-        <h2>邮箱验证成功！</h2>
-        <p>{{ message }}</p>
-        <button class="submit-btn" @click="goHome">进入首页</button>
-      </div>
+        <h2 v-if="status === 'loading'">正在验证邮箱...</h2>
+        <h2 v-else-if="status === 'success'">邮箱验证成功！</h2>
+        <h2 v-else-if="status === 'error'">验证失败</h2>
+        <h2 v-else>验证您的邮箱</h2>
 
-      <!-- 验证失败 -->
-      <div v-else class="status-state error">
-        <div class="auth-icon">❌</div>
-        <h2>验证失败</h2>
-        <p>{{ error }}</p>
-        <button class="submit-btn" @click="$router.push('/login')">返回登录</button>
+        <p>{{ msg }}</p>
+
+        <button
+          class="submit-btn"
+          @click="verify"
+          v-if="status === 'idle'"
+        >
+          确认验证
+        </button>
+        <button
+          class="submit-btn"
+          @click="goLogin"
+          v-if="status === 'success' || status === 'error'"
+        >
+          返回登录
+        </button>
       </div>
     </div>
   </div>
@@ -29,38 +36,52 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useReaderAuthStore } from '@/stores/readerAuth'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useReaderAuthStore()
 
-const loading = ref(true)
-const success = ref(false)
-const error = ref('')
-const message = ref('')
+const status = ref('idle') // idle | loading | success | error
+const msg = ref('')
 
-onMounted(async () => {
+onMounted(() => {
   const token = route.query.token
   if (!token) {
-    loading.value = false
-    error.value = '缺少验证令牌'
+    status.value = 'error'
+    msg.value = '缺少验证令牌，请检查邮件中的链接是否完整'
     return
   }
-
-  try {
-    const res = await authStore.verifyEmail(token)
-    loading.value = false
-    success.value = true
-    message.value = res.message || '您现在可以登录了'
-  } catch (err) {
-    loading.value = false
-    error.value = err.response?.data?.error || '验证失败，链接可能已过期'
-  }
+  // 显示初始提示，让用户点击按钮确认
+  msg.value = '请点击下方按钮完成邮箱验证'
 })
 
-function goHome() {
-  router.push('/')
+async function verify() {
+  const token = route.query.token
+  if (!token) return
+
+  status.value = 'loading'
+  msg.value = ''
+
+  try {
+    const { data } = await axios.post('/api/reader/verify-email', { token })
+    if (data.token) {
+      // 保存登录状态
+      localStorage.setItem('blog_reader_token', data.token)
+      localStorage.setItem('blog_reader_info', JSON.stringify(data.reader))
+    }
+    status.value = 'success'
+    msg.value = data.message || '您现在可以登录了'
+    // 2 秒后自动跳转首页
+    setTimeout(() => router.push('/'), 1500)
+  } catch (err) {
+    status.value = 'error'
+    const errMsg = err.response?.data?.error || '验证失败，链接可能已过期'
+    msg.value = errMsg
+  }
+}
+
+function goLogin() {
+  router.push('/login')
 }
 </script>
 
@@ -99,6 +120,7 @@ function goHome() {
   color: var(--color-text-secondary);
   font-size: 0.95rem;
   margin-bottom: 1.5rem;
+  line-height: 1.6;
 }
 
 .auth-icon {

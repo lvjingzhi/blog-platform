@@ -77,7 +77,7 @@ export const useReaderAuthStore = defineStore('readerAuth', () => {
    * 验证邮箱 → 返回 JWT 自动登录
    */
   async function verifyEmail(token) {
-    const { data } = await axios.get(`/api/reader/verify-email/${token}`)
+    const { data } = await axios.post('/api/reader/verify-email', { token })
     // 验证成功后自动登录
     token.value = data.token
     reader.value = data.reader
