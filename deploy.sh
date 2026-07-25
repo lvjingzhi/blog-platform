@@ -4,7 +4,7 @@
 #  在 Git Bash 终端执行: bash deploy.sh
 # ==========================================
 
-SERVER="root@47.101.144.215"
+SERVER="root@8.222.219.68"
 DOMAIN="abook2read.xyz"
 REPO="https://github.com/lvjingzhi/blog-platform.git"
 
@@ -126,6 +126,9 @@ PORT=3001
 JWT_SECRET=abook2read-jwt-secret-2024
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
+ALIPAY_APP_ID=2021006179637122
+ALIPAY_PRIVATE_KEY=请替换为你的应用私钥
+ALIPAY_PUBLIC_KEY=请替换为你的支付宝公钥
 EOF
 
 mkdir -p /root/blog-platform/server/data
