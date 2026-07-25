@@ -1,7 +1,7 @@
 const express = require('express');
 const { runQuery, runInsert, now } = require('../db');
 const { requireReader } = require('../middleware/requireReader');
-const { createQrCode, queryOrder } = require('../utils/alipay');
+const { createQrCode, verifyCallbackSign } = require('../utils/xorpay');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
@@ -11,7 +11,7 @@ const pendingOrders = new Map();
 
 /**
  * POST /api/purchases/create-order
- * 创建支付宝支付订单，返回二维码链接
+ * 创建 XorPay 支付订单，返回二维码链接
  */
 router.post('/create-order', requireReader, async (req, res) => {
   try {
@@ -51,11 +51,12 @@ router.post('/create-order', requireReader, async (req, res) => {
     const orderId = uuidv4().replace(/-/g, '').substring(0, 28);
     const amount = (post.price / 100).toFixed(2);
 
-    // 调用支付宝生成二维码
-    const { qrCode } = await createQrCode({
+    // 调用 XorPay 生成二维码
+    const { qrCode, aoid } = await createQrCode({
       orderId,
       title: post.title,
       amount,
+      notifyUrl: `http://abook2read.xyz/api/purchases/xorpay-callback`,
     });
 
     // 暂存订单信息
@@ -63,6 +64,7 @@ router.post('/create-order', requireReader, async (req, res) => {
       readerId,
       postId: post.id,
       amount: post.price,
+      aoid,
       createdAt: now(),
     });
 
@@ -80,6 +82,61 @@ router.post('/create-order', requireReader, async (req, res) => {
 });
 
 /**
+ * POST /api/purchases/xorpay-callback
+ * XorPay 支付回调通知（无需认证）
+ */
+router.post('/xorpay-callback', express.urlencoded({ extended: false }), (req, res) => {
+  try {
+    const { order_id, aoid, price, pay_type, status, sign } = req.body;
+
+    console.log('XorPay callback:', { order_id, aoid, price, pay_type, status });
+
+    // 验证签名
+    if (!verifyCallbackSign(req.body)) {
+      console.error('XorPay callback: sign verification failed');
+      return res.status(400).send('sign error');
+    }
+
+    // 只处理支付成功的回调
+    if (status !== 'ok') {
+      return res.send('success');
+    }
+
+    const order = pendingOrders.get(order_id);
+    if (!order) {
+      console.error('XorPay callback: order not found', order_id);
+      return res.send('success');
+    }
+
+    if (order.completed) {
+      return res.send('success');
+    }
+
+    // 检查是否已有购买记录
+    const existing = runQuery(
+      'SELECT id FROM purchases WHERE reader_id = $rid AND post_id = $pid',
+      { rid: order.readerId, pid: order.postId }
+    );
+
+    if (existing.length === 0) {
+      runInsert(
+        'INSERT INTO purchases (reader_id, post_id, amount, created_at) VALUES ($rid, $pid, $amt, $created)',
+        { rid: order.readerId, pid: order.postId, amt: order.amount, created: now() }
+      );
+    }
+
+    order.completed = true;
+    pendingOrders.set(order_id, order);
+
+    console.log('XorPay callback: payment confirmed for order', order_id);
+    res.send('success');
+  } catch (err) {
+    console.error('XorPay callback error:', err);
+    res.status(500).send('error');
+  }
+});
+
+/**
  * GET /api/purchases/check-order/:orderId
  * 查询支付状态，前端轮询此接口
  */
@@ -92,27 +149,17 @@ router.get('/check-order/:orderId', requireReader, async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const result = await queryOrder(orderId);
-
-    // 支付成功 → 创建购买记录
-    if (result.status === 'SUCCESS' && !order.completed) {
-      const existing = runQuery(
-        'SELECT id FROM purchases WHERE reader_id = $rid AND post_id = $pid',
-        { rid: order.readerId, pid: order.postId }
-      );
-
-      if (existing.length === 0) {
-        runInsert(
-          'INSERT INTO purchases (reader_id, post_id, amount, created_at) VALUES ($rid, $pid, $amt, $created)',
-          { rid: order.readerId, pid: order.postId, amt: order.amount, created: now() }
-        );
-      }
-
-      order.completed = true;
-      pendingOrders.set(orderId, order);
+    if (order.completed) {
+      return res.json({ status: 'SUCCESS' });
     }
 
-    res.json({ status: result.status });
+    // 检查是否超时（10分钟）
+    const elapsed = Date.now() - new Date(order.createdAt + 'Z').getTime();
+    if (elapsed > 10 * 60 * 1000) {
+      return res.json({ status: 'CLOSED' });
+    }
+
+    res.json({ status: 'WAITING' });
   } catch (err) {
     console.error('Check order error:', err);
     res.status(500).json({ error: '查询支付状态失败' });
