@@ -181,6 +181,25 @@ router.post('/login', (req, res) => {
 });
 
 /**
+ * DELETE /api/reader/me
+ * 注销账号 → 删除读者及其购买记录
+ */
+router.delete('/me', requireReader, (req, res) => {
+  try {
+    const readerId = req.reader.readerId;
+
+    // 删除购买记录和账号
+    runQuery('DELETE FROM purchases WHERE reader_id = $id', { id: readerId });
+    runQuery('DELETE FROM readers WHERE id = $id', { id: readerId });
+
+    res.json({ message: '账号已注销' });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).json({ error: '注销失败，请稍后重试' });
+  }
+});
+
+/**
  * POST /api/reader/forgot-password
  * 发送密码重置邮件
  */

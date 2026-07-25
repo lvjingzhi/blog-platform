@@ -31,17 +31,28 @@
         <span class="read-btn">阅读 →</span>
       </article>
     </div>
+
+    <div class="account-section">
+      <button class="delete-account-btn" @click="handleDeleteAccount" :disabled="deleting">
+        {{ deleting ? '注销中...' : '注销账号' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { usePurchasesStore } from '@/stores/purchases'
+import { useReaderAuthStore } from '@/stores/readerAuth'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
+const router = useRouter()
 const purchasesStore = usePurchasesStore()
+const authStore = useReaderAuthStore()
 const loading = ref(true)
 const purchases = ref([])
+const deleting = ref(false)
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('zh-CN')
@@ -52,6 +63,19 @@ onMounted(async () => {
   purchases.value = purchasesStore.purchases
   loading.value = false
 })
+
+async function handleDeleteAccount() {
+  if (!confirm('确定要注销账号吗？此操作不可撤销，所有购买记录将被删除。')) return
+  deleting.value = true
+  try {
+    await authStore.deleteAccount()
+    router.push('/')
+  } catch (err) {
+    alert(err.response?.data?.error || '注销失败')
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -158,6 +182,29 @@ onMounted(async () => {
   color: var(--color-primary);
   font-weight: 500;
   font-size: 0.95rem;
+}
+
+.account-section {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-light);
+  text-align: center;
+}
+
+.delete-account-btn {
+  padding: 0.5rem 1.5rem;
+  background: none;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.delete-account-btn:hover {
+  background: var(--color-error);
+  color: #fff;
 }
 
 @media (max-width: 768px) {

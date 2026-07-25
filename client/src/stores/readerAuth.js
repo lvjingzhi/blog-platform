@@ -111,9 +111,15 @@ export const useReaderAuthStore = defineStore('readerAuth', () => {
     return data
   }
 
+  async function deleteAccount() {
+    const { data } = await axios.delete('/api/reader/me')
+    logout()
+    return data
+  }
+
   return {
     token, reader, isAuthenticated,
     initFromStorage, register, login, logout, checkAuth,
-    verifyEmail, resendVerification, forgotPassword, resetPassword,
+    verifyEmail, resendVerification, forgotPassword, resetPassword, deleteAccount,
   }
 })
