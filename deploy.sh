@@ -4,7 +4,7 @@
 #  在 Git Bash 终端执行: bash deploy.sh
 # ==========================================
 
-SERVER="root@8.222.219.68"
+SERVER="root@47.242.226.212"
 DOMAIN="abook2read.xyz"
 REPO="https://github.com/lvjingzhi/blog-platform.git"
 
@@ -74,6 +74,10 @@ npm install
 cd /root/blog-platform/client
 npm install
 npm run build
+
+# 修复目录权限，确保 Nginx 可以读取
+chmod 755 /root /root/blog-platform /root/blog-platform/client /root/blog-platform/client/dist
+chmod -R 755 /root/blog-platform/client/dist
 
 echo "✅ 代码拉取并构建完成"
 ENDSSH
