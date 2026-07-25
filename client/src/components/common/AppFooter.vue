@@ -3,9 +3,9 @@
     <div class="footer-inner">
       <div class="footer-brand">
         <span class="footer-logo">✦</span>
-        <span>静志博客</span>
+        <span>静志书屋</span>
       </div>
-      <p class="footer-copy">© {{ year }} 静志博客 · 记录思考，分享知识</p>
+      <p class="footer-copy">© {{ year }} 静志书屋 · 记录思考，分享知识</p>
       <p class="footer-tech">Powered by Vue 3 + Express + SQLite</p>
     </div>
   </footer>

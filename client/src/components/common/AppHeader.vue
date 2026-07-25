@@ -3,7 +3,7 @@
     <div class="header-inner">
       <router-link to="/" class="logo">
         <span class="logo-icon">✦</span>
-        <span class="logo-text">静志博客</span>
+        <span class="logo-text">静志书屋</span>
       </router-link>
       <nav class="nav-links">
         <router-link to="/">首页</router-link>

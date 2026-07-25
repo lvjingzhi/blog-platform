@@ -9,7 +9,7 @@ DOMAIN="abook2read.xyz"
 REPO="https://github.com/lvjingzhi/blog-platform.git"
 
 echo "=========================================="
-echo "  部署静志博客到 ${DOMAIN}"
+echo "  部署静志书屋到 ${DOMAIN}"
 echo "=========================================="
 echo ""
 

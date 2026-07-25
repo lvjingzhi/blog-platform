@@ -4,7 +4,7 @@
     <section class="hero">
       <div class="hero-badge">📝 个人博客</div>
       <h1 class="hero-title">读书博客</h1>
-      <p class="hero-desc">记录思考，分享知识。深度内容，值得品读。</p>
+      <p class="hero-desc">记录思考，分享知识。</p>
       <div class="hero-stats" v-if="postsStore.totalPosts > 0">
         <div class="hero-stat">
           <span class="hero-stat-num">{{ postsStore.totalPosts }}</span>
