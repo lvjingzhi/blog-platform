@@ -14,13 +14,23 @@
             </div>
           </div>
 
-          <!-- Step 2: QR Code -->
+          <!-- Step 2: QR Code (desktop) / Direct Pay (mobile) -->
           <div v-else-if="step === 'qrcode'" class="step">
             <h3>支付宝扫码支付</h3>
             <p class="amount-text">{{ amountText }}</p>
+
+            <!-- 移动端：直接跳转支付宝 -->
+            <div v-if="isMobile" class="mobile-pay">
+              <p class="hint">点击下方按钮直接打开支付宝付款</p>
+              <a :href="alipayScheme" class="btn-alipay-launch">
+                <span class="alipay-icon">📱</span> 打开支付宝支付
+              </a>
+              <p class="hint-sub">或扫码支付</p>
+            </div>
+
             <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="支付二维码" class="qr-image" />
             <div class="spinner" v-if="!qrCodeUrl"></div>
-            <p class="hint">请用支付宝扫码付款</p>
+            <p v-if="!isMobile" class="hint">请用支付宝扫码付款</p>
             <p class="hint-sub">支付完成后自动解锁</p>
             <button class="btn-cancel" @click="close">取消</button>
           </div>
@@ -50,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { usePurchasesStore } from '@/stores/purchases'
 
 const props = defineProps({
@@ -65,9 +75,16 @@ const purchasesStore = usePurchasesStore()
 const step = ref('hidden')
 const errorMsg = ref('')
 const qrCodeUrl = ref('')
+const alipayUrl = ref('')
 const amountText = ref('')
 let pollTimer = null
 let orderId = null
+
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+const alipayScheme = computed(() => {
+  if (!alipayUrl.value) return ''
+  return 'alipays://platformapi/startapp?appId=20000067&url=' + encodeURIComponent(alipayUrl.value)
+})
 
 watch(() => props.show, (val) => {
   if (val) step.value = 'confirm'
@@ -77,6 +94,7 @@ watch(() => props.show, (val) => {
 function cleanup() {
   step.value = 'hidden'
   qrCodeUrl.value = ''
+  alipayUrl.value = ''
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
   orderId = null
 }
@@ -94,6 +112,7 @@ async function startPayment() {
     const order = await purchasesStore.createOrder(props.postId)
     orderId = order.orderId
     amountText.value = order.amountText
+    alipayUrl.value = order.qrCode
 
     // 用 API 生成二维码图片
     qrCodeUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(order.qrCode)}`
@@ -212,6 +231,36 @@ function done() {
 }
 
 .btn-pay:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45); }
+
+.mobile-pay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-alipay-launch {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.8rem 2.2rem;
+  background: linear-gradient(135deg, #1677FF, #0958d9);
+  color: #fff;
+  border-radius: 25px;
+  text-decoration: none;
+  font-size: 1.05rem;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(22, 119, 255, 0.4);
+  transition: all 0.2s;
+}
+
+.btn-alipay-launch:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 119, 255, 0.5);
+}
+
+.alipay-icon { font-size: 1.2rem; }
 
 .spinner {
   width: 44px;
