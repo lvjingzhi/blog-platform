@@ -7,7 +7,7 @@ export const useReaderStore = defineStore('reader', () => {
   function initReaderId() {
     let id = localStorage.getItem('blog_reader_id')
     if (!id) {
-      id = 'reader_' + crypto.randomUUID()
+      id = 'reader_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 10)
       localStorage.setItem('blog_reader_id', id)
     }
     readerId.value = id
