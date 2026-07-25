@@ -19,8 +19,8 @@
             <h3>支付宝扫码支付</h3>
             <p class="amount-text">{{ amountText }}</p>
 
-            <!-- 移动端：直接跳转支付宝 -->
-            <div v-if="isMobile" class="mobile-pay">
+            <!-- 直接跳转支付宝 -->
+            <div class="mobile-pay">
               <p class="hint">点击下方按钮直接打开支付宝付款</p>
               <a :href="alipayScheme" class="btn-alipay-launch">
                 <span class="alipay-icon">📱</span> 打开支付宝支付
@@ -30,7 +30,6 @@
 
             <img v-if="qrCodeUrl" :src="qrCodeUrl" alt="支付二维码" class="qr-image" />
             <div class="spinner" v-if="!qrCodeUrl"></div>
-            <p v-if="!isMobile" class="hint">请用支付宝扫码付款</p>
             <p class="hint-sub">支付完成后自动解锁</p>
             <button class="btn-cancel" @click="close">取消</button>
           </div>
