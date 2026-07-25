@@ -30,6 +30,22 @@ const routes = [
         component: () => import('@/pages/reader/MyLibraryPage.vue'),
         meta: { requiresReader: true },
       },
+      {
+        path: 'verify-email',
+        name: 'verify-email',
+        component: () => import('@/pages/reader/VerifyEmailPage.vue'),
+      },
+      {
+        path: 'forgot-password',
+        name: 'forgot-password',
+        component: () => import('@/pages/reader/ForgotPasswordPage.vue'),
+        meta: { guest: true },
+      },
+      {
+        path: 'reset-password',
+        name: 'reset-password',
+        component: () => import('@/pages/reader/ResetPasswordPage.vue'),
+      },
     ],
   },
 

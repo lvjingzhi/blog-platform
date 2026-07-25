@@ -1,55 +1,74 @@
 <template>
   <div class="reader-auth-page">
     <div class="auth-card">
-      <div class="auth-header">
-        <div class="auth-icon">✦</div>
-        <h2>欢迎回来</h2>
-        <p>{{ mode === 'login' ? '登录你的账号继续阅读' : '创建账号以购买付费内容' }}</p>
+
+      <!-- 注册成功提示 -->
+      <div v-if="showSuccess" class="success-state">
+        <div class="auth-icon">✉️</div>
+        <h2>注册成功！</h2>
+        <p>验证邮件已发送至 <strong>{{ registeredEmail }}</strong></p>
+        <p class="success-hint">请查收邮件并点击验证链接激活账号</p>
+        <button class="submit-btn" @click="switchMode('login')">返回登录</button>
       </div>
 
-      <div class="auth-tabs">
-        <button :class="{ active: mode === 'login' }" @click="switchMode('login')">登录</button>
-        <button :class="{ active: mode === 'register' }" @click="switchMode('register')">注册</button>
-      </div>
-
-      <form @submit.prevent="handleSubmit" class="auth-form">
-        <div class="form-group">
-          <label>邮箱</label>
-          <div class="input-wrapper">
-            <span class="input-icon">📧</span>
-            <input v-model="email" type="email" placeholder="请输入邮箱" required />
-          </div>
+      <!-- 登录/注册表单 -->
+      <template v-else>
+        <div class="auth-header">
+          <div class="auth-icon">✦</div>
+          <h2>欢迎回来</h2>
+          <p>{{ mode === 'login' ? '登录你的账号继续阅读' : '创建账号以购买付费内容' }}</p>
         </div>
 
-        <div class="form-group" v-if="mode === 'register'">
-          <label>昵称</label>
-          <div class="input-wrapper">
-            <span class="input-icon">👤</span>
-            <input v-model="nickname" type="text" placeholder="怎么称呼你？（可选）" />
-          </div>
+        <div class="auth-tabs">
+          <button :class="{ active: mode === 'login' }" @click="switchMode('login')">登录</button>
+          <button :class="{ active: mode === 'register' }" @click="switchMode('register')">注册</button>
         </div>
 
-        <div class="form-group">
-          <label>密码</label>
-          <div class="input-wrapper">
-            <span class="input-icon">🔑</span>
-            <input v-model="password" type="password" placeholder="密码（至少6位）" required minlength="6" />
+        <form @submit.prevent="handleSubmit" class="auth-form">
+          <div class="form-group">
+            <label>邮箱</label>
+            <div class="input-wrapper">
+              <span class="input-icon">📧</span>
+              <input v-model="email" type="email" placeholder="请输入邮箱" required />
+            </div>
           </div>
-        </div>
 
-        <div v-if="error" class="error-msg">{{ error }}</div>
+          <div class="form-group" v-if="mode === 'register'">
+            <label>昵称</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input v-model="nickname" type="text" placeholder="怎么称呼你？（可选）" />
+            </div>
+          </div>
 
-        <button type="submit" :disabled="loading" class="submit-btn">
-          {{ loading ? '处理中...' : (mode === 'login' ? '登录' : '创建账号') }}
-        </button>
-      </form>
+          <div class="form-group">
+            <label>密码</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔑</span>
+              <input v-model="password" type="password" placeholder="密码（至少6位）" required minlength="6" />
+            </div>
+          </div>
 
-      <p class="auth-hint" v-if="mode === 'login'">
-        还没有账号？<a href="#" @click.prevent="switchMode('register')">立即注册</a>
-      </p>
-      <p class="auth-hint" v-else>
-        已有账号？<a href="#" @click.prevent="switchMode('login')">立即登录</a>
-      </p>
+          <div v-if="error" class="error-msg">
+            {{ error }}
+            <a v-if="errorCode === 'EMAIL_NOT_VERIFIED'" href="#" class="resend-link" @click.prevent="handleResend">重新发送验证邮件</a>
+          </div>
+
+          <button type="submit" :disabled="loading" class="submit-btn">
+            {{ loading ? '处理中...' : (mode === 'login' ? '登录' : '创建账号') }}
+          </button>
+        </form>
+
+        <p class="auth-hint" v-if="mode === 'login'">
+          <a href="#" @click.prevent="$router.push('/forgot-password')">忘记密码？</a>
+        </p>
+        <p class="auth-hint" v-if="mode === 'login'">
+          还没有账号？<a href="#" @click.prevent="switchMode('register')">立即注册</a>
+        </p>
+        <p class="auth-hint" v-else>
+          已有账号？<a href="#" @click.prevent="switchMode('login')">立即登录</a>
+        </p>
+      </template>
     </div>
   </div>
 </template>
@@ -69,34 +88,54 @@ const password = ref('')
 const nickname = ref('')
 const loading = ref(false)
 const error = ref('')
+const errorCode = ref('')
+const showSuccess = ref(false)
+const registeredEmail = ref('')
 
 function switchMode(m) {
   mode.value = m
   error.value = ''
+  errorCode.value = ''
+  showSuccess.value = false
 }
 
 async function handleSubmit() {
   loading.value = true
   error.value = ''
+  errorCode.value = ''
   try {
     if (mode.value === 'register') {
-      await authStore.register({
+      const res = await authStore.register({
         email: email.value,
         password: password.value,
         nickname: nickname.value || undefined,
       })
+      // 注册成功 → 显示提示
+      registeredEmail.value = email.value
+      showSuccess.value = true
     } else {
       await authStore.login({
         email: email.value,
         password: password.value,
       })
+      const redirect = route.query.redirect || '/'
+      router.push(redirect)
     }
-    const redirect = route.query.redirect || '/'
-    router.push(redirect)
   } catch (err) {
     error.value = err.response?.data?.error || '操作失败，请重试'
+    errorCode.value = err.response?.data?.code || ''
   } finally {
     loading.value = false
+  }
+}
+
+async function handleResend() {
+  try {
+    await authStore.resendVerification(email.value)
+    error.value = '验证邮件已重新发送，请查收。'
+    errorCode.value = ''
+  } catch (err) {
+    error.value = err.response?.data?.error || '发送失败'
   }
 }
 </script>
@@ -232,6 +271,12 @@ async function handleSubmit() {
   border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
+.resend-link {
+  color: var(--color-primary);
+  margin-left: 0.5rem;
+  font-weight: 500;
+}
+
 .submit-btn {
   width: 100%;
   padding: 0.75rem;
@@ -260,7 +305,7 @@ async function handleSubmit() {
 
 .auth-hint {
   text-align: center;
-  margin-top: 1.2rem;
+  margin-top: 0.6rem;
   color: var(--color-text-muted);
   font-size: 0.88rem;
 }
@@ -268,6 +313,35 @@ async function handleSubmit() {
 .auth-hint a {
   color: var(--color-primary);
   font-weight: 500;
+}
+
+/* 注册成功 */
+.success-state {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.success-state h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0.8rem 0 0.5rem;
+}
+
+.success-state p {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  margin: 0 0 0.3rem;
+}
+
+.success-state p strong {
+  color: var(--color-primary);
+}
+
+.success-hint {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
 }
 
 @media (max-width: 768px) {

@@ -132,6 +132,11 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
 XORPAY_AID=706615
 XORPAY_SECRET=2aad1cfde0fc4ef380d0ef2178387722
+SMTP_HOST=smtp.qq.com
+SMTP_PORT=465
+SMTP_USER=你的QQ邮箱@qq.com
+SMTP_PASS=你的QQ邮箱授权码
+SMTP_FROM=你的QQ邮箱@qq.com
 EOF
 
 mkdir -p /root/blog-platform/server/data

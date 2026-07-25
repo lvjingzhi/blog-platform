@@ -34,16 +34,18 @@ export const useReaderAuthStore = defineStore('readerAuth', () => {
     }
   }
 
+  /**
+   * 注册 → 不再直接返回 JWT，而是返回提示信息
+   */
   async function register(data) {
     const { data: res } = await axios.post('/api/reader/register', data)
-    token.value = res.token
-    reader.value = res.reader
-    localStorage.setItem('blog_reader_token', res.token)
-    localStorage.setItem('blog_reader_info', JSON.stringify(res.reader))
-    axios.defaults.headers.common['Authorization'] = `Bearer ${res.token}`
+    // 注册成功后不自动登录，需要验证邮箱
     return res
   }
 
+  /**
+   * 登录
+   */
   async function login(data) {
     const { data: res } = await axios.post('/api/reader/login', data)
     token.value = res.token
@@ -71,5 +73,47 @@ export const useReaderAuthStore = defineStore('readerAuth', () => {
     return data
   }
 
-  return { token, reader, isAuthenticated, initFromStorage, register, login, logout, checkAuth }
+  /**
+   * 验证邮箱 → 返回 JWT 自动登录
+   */
+  async function verifyEmail(token) {
+    const { data } = await axios.get(`/api/reader/verify-email/${token}`)
+    // 验证成功后自动登录
+    token.value = data.token
+    reader.value = data.reader
+    localStorage.setItem('blog_reader_token', data.token)
+    localStorage.setItem('blog_reader_info', JSON.stringify(data.reader))
+    axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+    return data
+  }
+
+  /**
+   * 重新发送验证邮件
+   */
+  async function resendVerification(email) {
+    const { data } = await axios.post('/api/reader/resend-verification', { email })
+    return data
+  }
+
+  /**
+   * 忘记密码 → 发送重置邮件
+   */
+  async function forgotPassword(email) {
+    const { data } = await axios.post('/api/reader/forgot-password', { email })
+    return data
+  }
+
+  /**
+   * 重置密码
+   */
+  async function resetPassword(token, newPassword) {
+    const { data } = await axios.post('/api/reader/reset-password', { token, newPassword })
+    return data
+  }
+
+  return {
+    token, reader, isAuthenticated,
+    initFromStorage, register, login, logout, checkAuth,
+    verifyEmail, resendVerification, forgotPassword, resetPassword,
+  }
 })
