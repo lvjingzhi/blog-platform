@@ -7,25 +7,33 @@
           <span class="price-icon">💎</span> ¥{{ (post.price / 100).toFixed(2) }}
         </span>
       </div>
-      <p class="post-excerpt" v-if="post.excerpt">{{ post.excerpt }}</p>
+      <p class="post-excerpt" v-if="post.excerpt" :class="{ expanded }">{{ post.excerpt }}</p>
+      <button
+        class="excerpt-toggle"
+        v-if="post.excerpt"
+        @click.stop="expanded = !expanded"
+        :aria-label="expanded ? '收起' : '展开'"
+      >
+        <span class="toggle-icon" :class="{ open: expanded }">▾</span>
+        <span class="toggle-text">{{ expanded ? '收起' : '展开' }}</span>
+      </button>
       <div class="post-card-footer">
         <div class="tags">
           <TagBadge v-for="tag in post.tags" :key="tag" :tag="tag" />
         </div>
-        <div class="footer-right">
-          <span class="read-more">查看完整 →</span>
-          <time>{{ formatDate(post.created_at) }}</time>
-        </div>
+        <time>{{ formatDate(post.created_at) }}</time>
       </div>
     </div>
-    <div class="post-card-arrow">→</div>
   </article>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import TagBadge from '@/components/common/TagBadge.vue'
 
 defineProps({ post: { type: Object, required: true } })
+
+const expanded = ref(false)
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('zh-CN')
@@ -103,6 +111,44 @@ function formatDate(dateStr) {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  transition: all var(--transition);
+}
+
+.post-excerpt.expanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+.excerpt-toggle {
+  display: flex;
+  align-items: center;
+  margin-top: 0.2rem;
+  padding: 0.1rem 0.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: all var(--transition);
+}
+
+.excerpt-toggle:hover {
+  opacity: 0.75;
+}
+
+.toggle-icon {
+  display: inline-block;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  transition: transform var(--transition);
+}
+
+.toggle-icon.open {
+  transform: rotate(180deg);
+}
+
+.toggle-text {
+  display: none;
 }
 
 .post-card-footer {
@@ -118,41 +164,10 @@ function formatDate(dateStr) {
   flex-wrap: wrap;
 }
 
-.footer-right {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  flex-shrink: 0;
-}
-
-.read-more {
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all var(--transition);
-}
-
-.post-card:hover .read-more {
-  transform: translateX(3px);
-}
-
 time {
   color: var(--color-text-muted);
   font-size: 0.82rem;
   flex-shrink: 0;
-}
-
-.post-card-arrow {
-  color: var(--color-text-muted);
-  font-size: 1.2rem;
-  transition: all var(--transition);
-  flex-shrink: 0;
-}
-
-.post-card:hover .post-card-arrow {
-  color: var(--color-primary);
-  transform: translateX(4px);
 }
 
 @media (max-width: 768px) {
@@ -173,8 +188,25 @@ time {
     gap: 0.5rem;
     align-items: flex-start;
   }
-  .post-card-arrow {
+  .toggle-icon {
     display: none;
+  }
+  .toggle-text {
+    display: inline;
+  }
+  .excerpt-toggle {
+    opacity: 1;
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.9rem;
+    border: 1px solid var(--color-primary-light);
+    border-radius: 999px;
+    color: var(--color-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .excerpt-toggle:hover {
+    opacity: 1;
+    background: var(--color-primary-bg);
   }
 }
 </style>
