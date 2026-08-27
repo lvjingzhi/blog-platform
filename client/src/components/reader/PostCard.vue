@@ -12,7 +12,10 @@
         <div class="tags">
           <TagBadge v-for="tag in post.tags" :key="tag" :tag="tag" />
         </div>
-        <time>{{ formatDate(post.created_at) }}</time>
+        <div class="footer-right">
+          <span class="read-more">查看完整 →</span>
+          <time>{{ formatDate(post.created_at) }}</time>
+        </div>
       </div>
     </div>
     <div class="post-card-arrow">→</div>
@@ -96,9 +99,10 @@ function formatDate(dateStr) {
   margin: 0.6rem 0 0;
   line-height: 1.6;
   font-size: 0.92rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .post-card-footer {
@@ -112,6 +116,25 @@ function formatDate(dateStr) {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-shrink: 0;
+}
+
+.read-more {
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.post-card:hover .read-more {
+  transform: translateX(3px);
 }
 
 time {
