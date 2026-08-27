@@ -6,43 +6,41 @@ const router = express.Router();
 
 /**
  * GET /api/posts
- * List published posts with pagination and optional tag filter
+ * List published posts with pagination, optional tag filter and title search
  */
 router.get('/', (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const tag = req.query.tag || null;
+  const search = req.query.search ? String(req.query.search).trim() : null;
   const offset = (page - 1) * limit;
 
-  let total, posts;
+  const conditions = ['is_published = 1'];
+  const params = {};
 
   if (tag) {
-    total = runQuery(
-      `SELECT COUNT(*) as count FROM posts
-       WHERE is_published = 1 AND tags LIKE $tagPattern`,
-      { tagPattern: `%"${tag}"%` }
-    );
-
-    posts = runQuery(
-      `SELECT id, title, slug, excerpt, tags, price, created_at, updated_at
-       FROM posts
-       WHERE is_published = 1 AND tags LIKE $tagPattern
-       ORDER BY created_at DESC
-       LIMIT $limit OFFSET $offset`,
-      { tagPattern: `%"${tag}"%`, limit, offset }
-    );
-  } else {
-    total = runQuery(
-      'SELECT COUNT(*) as count FROM posts WHERE is_published = 1'
-    );
-
-    posts = runQuery(
-      `SELECT id, title, slug, excerpt, tags, price, created_at, updated_at
-       FROM posts WHERE is_published = 1
-       ORDER BY created_at DESC LIMIT $limit OFFSET $offset`,
-      { limit, offset }
-    );
+    conditions.push('tags LIKE $tagPattern');
+    params.tagPattern = `%"${tag}"%`;
   }
+
+  if (search) {
+    conditions.push('(title LIKE $searchPattern OR excerpt LIKE $searchPattern)');
+    params.searchPattern = `%${search}%`;
+  }
+
+  const where = conditions.join(' AND ');
+
+  const total = runQuery(
+    `SELECT COUNT(*) as count FROM posts WHERE ${where}`,
+    params
+  );
+
+  const posts = runQuery(
+    `SELECT id, title, slug, excerpt, tags, price, created_at, updated_at
+     FROM posts WHERE ${where}
+     ORDER BY created_at DESC LIMIT $limit OFFSET $offset`,
+    { ...params, limit, offset }
+  );
 
   res.json({
     posts: posts.map(p => ({

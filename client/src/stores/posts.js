@@ -11,12 +11,13 @@ export const usePostsStore = defineStore('posts', () => {
   const isLoading = ref(false)
   const error = ref(null)
 
-  async function fetchPosts(page = 1, tag = null) {
+  async function fetchPosts(page = 1, tag = null, search = null) {
     isLoading.value = true
     error.value = null
     try {
       const params = { page, limit: pageSize.value }
       if (tag) params.tag = tag
+      if (search) params.search = search
       const { data } = await axios.get('/api/posts', { params })
       posts.value = data.posts
       totalPosts.value = data.total

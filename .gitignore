@@ -3,4 +3,5 @@ dist/
 *.log
 .env
 *.local
-.DS_Storeserver/data/
+.DS_Store
+server/data/

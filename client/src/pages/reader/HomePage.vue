@@ -13,20 +13,55 @@
       </div>
     </section>
 
-    <!-- Tag Filter -->
-    <div class="tag-filter" v-if="allTags.length > 0">
-      <button :class="{ active: !activeTag }" @click="setTag(null)">
-        <span class="tag-icon">📋</span> 全部
-      </button>
-      <button
-        v-for="tag in allTags"
-        :key="tag"
-        :class="{ active: activeTag === tag }"
-        @click="setTag(tag)"
-      >{{ tag }}</button>
+    <!-- Filter & Search -->
+    <div class="filter-bar">
+      <div class="tag-filter" v-if="allTags.length > 0">
+        <button class="tag-trigger" @click="toggleTagDropdown">
+          <span class="tag-icon">📋</span>
+          <span class="tag-current">{{ activeTag || '全部标签' }}</span>
+          <span class="tag-caret" :class="{ open: tagDropdownOpen }">▾</span>
+        </button>
+
+        <Transition name="tag-drop">
+          <div class="tag-panel" v-if="tagDropdownOpen">
+            <input
+              class="tag-search"
+              v-model="tagSearch"
+              placeholder="搜索标签..."
+              @click.stop
+            />
+            <div class="tag-options">
+              <button class="tag-option" :class="{ active: !activeTag }" @click="pickTag(null)">
+                全部
+              </button>
+              <button
+                v-for="tag in filteredTags"
+                :key="tag"
+                class="tag-option"
+                :class="{ active: activeTag === tag }"
+                @click="pickTag(tag)"
+              >{{ tag }}</button>
+            </div>
+            <div v-if="filteredTags.length === 0" class="tag-empty">没有匹配的标签</div>
+          </div>
+        </Transition>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input
+          class="search-input"
+          v-model="searchKeyword"
+          placeholder="搜索文章标题..."
+          @keyup.enter="applySearchNow"
+        />
+        <button v-if="searchKeyword" class="search-clear" @click="clearSearch">✕</button>
+      </div>
     </div>
 
-    <LoadingSpinner :show="postsStore.isLoading" text="加载中..." />
+    <div class="tag-backdrop" v-if="tagDropdownOpen" @click="tagDropdownOpen = false"></div>
+
+    <LoadingSpinner :show="isInitialLoading" text="加载中..." />
 
     <div v-if="!postsStore.isLoading && postsStore.posts.length === 0" class="empty-state">
       <div class="empty-icon">📭</div>
@@ -48,7 +83,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { usePostsStore } from '@/stores/posts'
 import PostCard from '@/components/reader/PostCard.vue'
 import Pagination from '@/components/common/Pagination.vue'
@@ -56,6 +91,10 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 const postsStore = usePostsStore()
 const activeTag = ref(null)
+const tagDropdownOpen = ref(false)
+const tagSearch = ref('')
+const searchKeyword = ref('')
+const isInitialLoading = ref(true)
 
 const allTags = computed(() => {
   const tagSet = new Set()
@@ -63,18 +102,63 @@ const allTags = computed(() => {
   return [...tagSet]
 })
 
+const filteredTags = computed(() => {
+  const kw = tagSearch.value.trim().toLowerCase()
+  if (!kw) return allTags.value
+  return allTags.value.filter(t => t.toLowerCase().includes(kw))
+})
+
 function setTag(tag) {
   activeTag.value = tag
-  postsStore.fetchPosts(1, tag)
+  postsStore.fetchPosts(1, tag, currentSearch())
+}
+
+function currentSearch() {
+  return searchKeyword.value.trim() || null
+}
+
+// 输入防抖：停止输入 350ms 后自动搜索
+let searchTimer = null
+watch(searchKeyword, () => {
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    postsStore.fetchPosts(1, activeTag.value, currentSearch())
+  }, 350)
+})
+
+function applySearchNow() {
+  clearTimeout(searchTimer)
+  postsStore.fetchPosts(1, activeTag.value, currentSearch())
+}
+
+function clearSearch() {
+  searchKeyword.value = ''
+  applySearchNow()
+}
+
+function toggleTagDropdown() {
+  tagDropdownOpen.value = !tagDropdownOpen.value
+  if (tagDropdownOpen.value) tagSearch.value = ''
+}
+
+function pickTag(tag) {
+  setTag(tag)
+  tagDropdownOpen.value = false
+  tagSearch.value = ''
 }
 
 function goToPage(page) {
-  postsStore.fetchPosts(page, activeTag.value)
+  postsStore.fetchPosts(page, activeTag.value, currentSearch())
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-onMounted(() => {
-  postsStore.fetchPosts()
+onMounted(async () => {
+  await postsStore.fetchPosts()
+  isInitialLoading.value = false
+})
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
 })
 </script>
 
@@ -160,17 +244,85 @@ onMounted(() => {
   color: var(--color-text-muted);
 }
 
-/* === Tag Filter === */
-.tag-filter {
+/* === Filter Bar === */
+.filter-bar {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
   margin-bottom: 1.5rem;
-  padding: 0 0.2rem;
 }
 
-.tag-filter button {
-  padding: 0.4rem 1rem;
+/* === Tag Filter === */
+.tag-filter {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  max-width: 320px;
+  margin-left: auto;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  transition: border-color var(--transition);
+}
+
+.search-box:focus-within {
+  border-color: var(--color-primary-light);
+}
+
+.search-icon {
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.search-clear {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.search-clear:hover {
+  background: var(--color-text-muted);
+  color: #fff;
+}
+
+.tag-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
   border: 1px solid var(--color-border);
   border-radius: 20px;
   background: var(--color-surface);
@@ -181,17 +333,119 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.tag-filter button:hover {
+.tag-trigger:hover {
   border-color: var(--color-primary-light);
   color: var(--color-primary);
 }
 
-.tag-filter button.active {
+.tag-current {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-caret {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  transition: transform var(--transition);
+}
+
+.tag-caret.open {
+  transform: rotate(180deg);
+}
+
+.tag-panel {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 110;
+  width: 300px;
+  max-height: 340px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-xl);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.tag-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+  transition: border-color var(--transition);
+  flex-shrink: 0;
+}
+
+.tag-search:focus {
+  border-color: var(--color-primary-light);
+  background: var(--color-surface);
+}
+
+.tag-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.tag-option {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.tag-option:hover {
+  border-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.tag-option.active {
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.tag-empty {
+  padding: 1.2rem 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.tag-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+/* dropdown transition */
+.tag-drop-enter-active,
+.tag-drop-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.tag-drop-enter-from,
+.tag-drop-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .tag-icon {
@@ -247,6 +501,19 @@ onMounted(() => {
   }
   .hero-desc {
     font-size: 1rem;
+  }
+  .tag-panel {
+    width: calc(100vw - 2rem);
+    max-width: 340px;
+  }
+  .filter-bar {
+    flex-wrap: wrap;
+  }
+  .search-box {
+    order: -1;
+    flex: 1 1 100%;
+    max-width: none;
+    margin-left: 0;
   }
 }
 

@@ -122,7 +122,9 @@ function formatDate(dateStr) {
 .excerpt-toggle {
   display: flex;
   align-items: center;
+  width: fit-content;
   margin-top: 0.2rem;
+  margin-left: auto;
   padding: 0.1rem 0.2rem;
   background: none;
   border: none;

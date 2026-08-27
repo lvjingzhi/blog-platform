@@ -386,14 +386,6 @@ img {
     gap: 0.8rem;
   }
 
-  .tag-filter {
-    gap: 0.3rem;
-  }
-  .tag-filter button {
-    padding: 0.25rem 0.7rem;
-    font-size: 0.8rem;
-  }
-
   .pagination {
     gap: 0.3rem;
   }
